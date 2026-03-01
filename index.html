@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>RouteForge — Live Navigation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <div id="sidebar">
+    <div id="brand">
+      <div id="brand-icon">◈</div>
+      <div>
+        <span id="brand-name">RouteForge</span>
+        <span id="brand-tagline">Live · Free · Open</span>
+      </div>
+    </div>
+
+    <!-- API key warning -->
+    <div id="key-warning" class="hidden warn-banner">
+      ⚠ Add your Google Maps API key in <code>src/routing.js</code> to enable routing.
+    </div>
+
+    <!-- Search Panel -->
+    <div id="search-panel">
+      <div class="field-group">
+        <label class="field-label"><span class="dot green-dot"></span>FROM</label>
+        <div class="field-row">
+          <input id="origin-input" type="text" placeholder="Start location…" autocomplete="off" />
+          <button class="icon-btn" id="locate-btn" title="Use my location">⊕</button>
+        </div>
+        <div class="sug-box" id="origin-sug"></div>
+      </div>
+
+      <div class="swap-row">
+        <div class="swap-line"></div>
+        <button id="swap-btn" title="Swap">⇅</button>
+        <div class="swap-line"></div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label"><span class="dot pink-dot"></span>TO</label>
+        <div class="field-row">
+          <input id="dest-input" type="text" placeholder="Destination…" autocomplete="off" />
+        </div>
+        <div class="sug-box" id="dest-sug"></div>
+      </div>
+
+      <div class="mode-row">
+        <button class="mode-btn active" data-mode="driving">🚗 Drive</button>
+        <button class="mode-btn" data-mode="bicycling">🚲 Cycle</button>
+        <button class="mode-btn" data-mode="walking">🚶 Walk</button>
+        <button class="mode-btn" data-mode="transit">🚌 Transit</button>
+      </div>
+
+      <button id="route-btn" disabled>
+        <span id="route-btn-text">GET DIRECTIONS</span>
+        <span id="route-btn-loader" class="hidden">CALCULATING…</span>
+      </button>
+    </div>
+
+    <!-- Route Info Panel -->
+    <div id="route-info" class="hidden">
+      <div class="route-summary-row">
+        <div class="stat-pill">
+          <div class="stat-v" id="stat-duration">—</div>
+          <div class="stat-l">Duration</div>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-v" id="stat-distance">—</div>
+          <div class="stat-l">Distance</div>
+        </div>
+      </div>
+      <div id="route-summary" class="route-via"></div>
+
+      <button id="start-nav-btn">▶ START NAVIGATION</button>
+
+      <div class="steps-box">
+        <div class="steps-hdr">
+          <span>TURN-BY-TURN</span>
+          <span id="steps-count" class="steps-count"></span>
+        </div>
+        <ol id="steps-list"></ol>
+      </div>
+    </div>
+
+    <!-- Live Nav HUD (sidebar portion) -->
+    <div id="nav-hud" class="hidden">
+      <!-- Next turn card -->
+      <div class="turn-card">
+        <div id="hud-maneuver-icon" class="turn-icon">⬆</div>
+        <div class="turn-body">
+          <div id="hud-maneuver-dist" class="turn-dist">—</div>
+          <div id="hud-maneuver-text" class="turn-instr">Calculating…</div>
+        </div>
+      </div>
+
+      <!-- Street name -->
+      <div id="hud-street" class="hud-street"></div>
+
+      <!-- Speed + stats row -->
+      <div class="hud-row">
+        <div class="speed-box">
+          <div id="hud-speed" class="speed-val">0</div>
+          <div id="hud-speed-unit" class="speed-unit">MPH</div>
+        </div>
+        <div class="hud-stats">
+          <div class="hud-stat">
+            <div id="hud-remaining" class="hud-sv">—</div>
+            <div class="hud-sl">Left</div>
+          </div>
+          <div class="hud-stat">
+            <div id="hud-time-left" class="hud-sv">—</div>
+            <div class="hud-sl">Time</div>
+          </div>
+          <div class="hud-stat">
+            <div id="hud-eta" class="hud-sv">—</div>
+            <div class="hud-sl">ETA</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Off-route banner -->
+      <div id="off-route-banner" class="off-route hidden">⚠ Off route — recalculating…</div>
+
+      <!-- Step list (stays scrollable in nav mode) -->
+      <div class="steps-box compact">
+        <div class="steps-hdr"><span>UPCOMING</span><span id="steps-count" class="steps-count"></span></div>
+        <ol id="steps-list" class="compact-list"></ol>
+      </div>
+
+      <button id="stop-nav-btn">■ END NAVIGATION</button>
+    </div>
+
+    <!-- Arrival screen -->
+    <div id="arrival-screen" class="hidden">
+      <canvas id="confetti-canvas"></canvas>
+      <div class="arrival-inner">
+        <div class="arrival-icon">🏁</div>
+        <div class="arrival-title">You've arrived!</div>
+        <div id="arrival-dest" class="arrival-dest"></div>
+        <button id="new-trip-btn">+ New Trip</button>
+      </div>
+    </div>
+
+    <div id="sidebar-footer">
+      <a href="https://leafletjs.com" target="_blank">Leaflet</a> ·
+      <a href="https://developers.google.com/maps" target="_blank">Google Maps</a> ·
+      <a href="https://nominatim.org" target="_blank">Nominatim</a>
+    </div>
+  </div>
+
+  <!-- ═══ MAP ═══ -->
+  <div id="map-container">
+    <div id="map"></div>
+
+    <!-- Map overlay controls -->
+    <div id="map-overlay-top">
+      <button id="toggle-sidebar-btn" title="Toggle sidebar">◧</button>
+
+      <!-- Compass widget -->
+      <div id="compass-widget" class="hidden">
+        <div id="compass-needle">↑</div>
+        <div id="compass-badge">N</div>
+      </div>
+
+      <!-- Compass availability status -->
+      <div id="compass-status" class="hidden">Compass: Checking…</div>
+
+      <!-- Rotate-map toggle -->
+      <button id="rotate-btn" class="map-fab hidden" title="Rotate map to heading">⌖</button>
+
+      <!-- Voice toggle -->
+      <button id="voice-btn" class="map-fab" title="Mute voice">🔊</button>
+
+      <!-- Recenter -->
+      <button id="recenter-btn" class="map-fab hidden" title="Re-center on me">◎</button>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast hidden">
+      <span id="toast-msg"></span>
+      <button id="toast-close">✕</button>
+    </div>
+  </div>
+
+</div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

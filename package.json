@@ -1,0 +1,18 @@
+{
+  "name": "routeforge",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Live navigation app with Google Maps routing, directional arrow, real-time GPS",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4"
+  },
+  "devDependencies": {
+    "vite": "^5.4.21"
+  }
+}
