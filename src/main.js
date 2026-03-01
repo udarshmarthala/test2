@@ -4,9 +4,6 @@
 //           guidance, speed display, off-route detection,
 //           smooth marker, ETA, arrival screen, multi-route
 // ============================================================
-import '../style.css';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import { geocodeSearch, reverseGeocode }      from './geocoding.js';
 import { LiveTracker, getCurrentPosition }     from './tracker.js';
 import {
@@ -16,6 +13,11 @@ import {
   getManeuverIcon, speak, buildVoiceInstruction,
   GOOGLE_MAPS_API_KEY
 } from './routing.js';
+
+const L = window.L;
+if (!L) {
+  throw new Error('Leaflet failed to load. Check network access to unpkg.com.');
+}
 
 // ─────────────────────────────────────────────
 // STATE
